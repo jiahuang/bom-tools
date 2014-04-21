@@ -12,7 +12,6 @@ var Uniquify = function(files, output, excludes, keepColumns, column){
   this.data = [];
   this.extraColumns = [];
   this.keepColumns = keepColumns;
-  this.start();
 }
 
 Uniquify.prototype._isExcluded = function(record){
@@ -115,5 +114,13 @@ var uniqifyColumn = "Manufacturer PN";
 var keepColumns = ["Type", "Value", "Description", "Package", 
   "Manufacturer", "Manufacturer PN", "Datasheet", "Source", "Link", "Part #", "Notes"];
 
-var u = new Uniquify(['./audio.csv'], 
-  "uniquify.csv", excludes, keepColumns, "Manufacturer PN");
+if (process.argv.length <= 3){
+  return console.log("Usage: node uniquify.js output.csv bom1.csv [bom2.csv] [bom3.csv] ...");
+} 
+
+var output = process.argv[2];
+var files = process.argv.splice(3, process.argv.length);
+
+var u = new Uniquify(files, output, excludes, keepColumns, "Manufacturer PN");
+u.start();
+
