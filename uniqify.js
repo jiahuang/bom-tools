@@ -2,26 +2,36 @@ var fs = require('fs'),
   csv = require('csv'),
   path = require('path')
   ;
-// excludes resistors, caps, and inductors
-var excludes = [];
-var uniqifyColumn = "Manufacturer PN"; 
-var keepColumns = ["Type", "Value", "Description", "Package", 
-  "Manufacturer", "Manufacturer PN", "Datasheet", "Source", "Link", "Part #", "Notes"];
 
 // takes in boms and spits out all the unique components 
-var Uniquify = function(files, output, excludes, column){
+var Uniquify = function(files, output, excludes, keepColumns, column){
   this.column = column;
   this.files = files;
   this.excludes = excludes;
   this.output = output;
   this.data = [];
   this.extraColumns = [];
+  this.keepColumns = keepColumns;
   this.start();
+}
+
+Uniquify.prototype._isExcluded = function(record){
+  var excludeKeys = Object.keys(this.excludes);
+  for (var i = 0; i < excludeKeys.length; i++){
+    var key = excludeKeys[i];
+    if (this.excludes[key].indexOf(record[key]) != -1){
+      return true;
+    }
+  }
+
+  return false;
 }
 
 Uniquify.prototype._stashOutput = function(record, filename){
   // open up the output file
   var self = this;
+  if (self._isExcluded(record)) return;
+
   var isRepeated = this.data.some(function(e, i){
     return e[self.column] == record[self.column]
   });
@@ -34,7 +44,7 @@ Uniquify.prototype._stashOutput = function(record, filename){
       self.extraColumns.push(product);
     }
 
-    keepColumns.forEach(function(key){
+    self.keepColumns.forEach(function(key){
       if (record[key] == undefined)
         filtered[key] = "";
       else {
@@ -46,37 +56,25 @@ Uniquify.prototype._stashOutput = function(record, filename){
 }
 
 Uniquify.prototype.write = function(){
-  console.log("writing");
   var csvString = "";
   var count = 0;
   var self = this;
-  // stick in the base columns first
-  keepColumns.forEach(function(column){
-    csvString = csvString+column+",";
-  });
+  // stick in the base columns first, then stick in the extra columns
+  csvString = self.keepColumns.join(',') +','+ self.extraColumns.join(',')+'\n';
 
-  // then stick in the extra columns
-  self.extraColumns.forEach(function(column){
-    csvString = csvString+column+",";
-  });
-
-  csvString = csvString +"\n";
-  console.log(csvString);
   // then for each line populate the base information
   self.data.forEach(function(d){
-    keepColumns.forEach(function(column){
-      csvString = csvString+d[column]+",";
-    });
+
+    csvString = csvString + self.keepColumns.map(function(column){
+      return d[column]
+    }).join(',') + ',';
     
     // now populate the extra column as applicable
-    self.extraColumns.forEach(function(column){
-      if (column in d) {
-        csvString = csvString+d[column]+",";
-      } else {
-        csvString = csvString+""+",";
-      }
-    });
-    csvString = csvString + "\n";
+    csvString = csvString + self.extraColumns.map(function(column){
+      if (column in d) return d[column];
+      else return "";
+    }).join(',') + "\n";
+
     count++;
     if (count >= self.data.length){
       // write it to a file
@@ -93,11 +91,10 @@ Uniquify.prototype.start = function(){
   var count = 0;
   var self = this;
   self.files.forEach(function(file){
-    // console.log("file", file);
+    console.log("reading in file", file);
     csv()
     .from.stream(fs.createReadStream(file), {columns: true})
     .on('record', function(record){
-      console.log(record);
       self._stashOutput(record, file);
     })
     .on('end', function(){
@@ -112,5 +109,11 @@ Uniquify.prototype.start = function(){
 
 }
 
+// excludes resistors, caps, and inductors
+var excludes = {Type: ["CAP-0402-SEEED", "CAP_0402", "RES-0402-SEEED", "RES_0402", "CAP_0805"]};
+var uniqifyColumn = "Manufacturer PN"; 
+var keepColumns = ["Type", "Value", "Description", "Package", 
+  "Manufacturer", "Manufacturer PN", "Datasheet", "Source", "Link", "Part #", "Notes"];
+
 var u = new Uniquify(['./audio.csv'], 
-  "uniquify.csv", [], "Manufacturer PN");
+  "uniquify.csv", excludes, keepColumns, "Manufacturer PN");
