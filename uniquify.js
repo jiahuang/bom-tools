@@ -38,7 +38,7 @@ Uniquify.prototype._stashOutput = function(record, filename){
   if (!isRepeated){
     var product = path.basename(filename, ".csv");
     var filtered = {};
-    filtered[product] = record["Qty"];
+    filtered[product] = record["Quantity"];
     if (self.extraColumns.indexOf(product) == -1){
       self.extraColumns.push(product);
     }
@@ -110,7 +110,7 @@ Uniquify.prototype.start = function(){
 
 // excludes resistors, caps, and inductors
 var excludes = {Type: ["CAP-0402-SEEED", "CAP_0402", "RES-0402-SEEED", "RES_0402", "CAP_0805"]};
-var uniqifyColumn = "Manufacturer PN"; 
+var uniqifyColumn = "Type"; 
 var keepColumns = ["Type", "Value", "Description", "Package", 
   "Manufacturer", "Manufacturer PN", "Datasheet", "Source", "Link", "Part #", "Notes"];
 
@@ -121,6 +121,6 @@ if (process.argv.length <= 3){
 var output = process.argv[2];
 var files = process.argv.splice(3, process.argv.length);
 
-var u = new Uniquify(files, output, excludes, keepColumns, "Manufacturer PN");
+var u = new Uniquify(files, output, excludes, keepColumns, uniqifyColumn);
 u.start();
 
