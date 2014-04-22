@@ -109,7 +109,7 @@ Uniquify.prototype.start = function(){
 }
 
 // excludes resistors, caps, and inductors
-var excludes = {Type: ["CAP-0402-SEEED", "CAP_0402", "RES-0402-SEEED", "RES_0402", "CAP_0805"]};
+var excludes = {Type: ["CAP-0402-SEEED", "CAP_0402", "RES-0402-SEEED", "RES_0402", "LED", "CAP_0805", "CAP-0805-SEEED", "RES_0805", "RES", "Testpoint", "CAP-0603-SEEED", "RES-0603-SEEED", "ICSP"]};
 var uniqifyColumn = "Type"; 
 var keepColumns = ["Type", "Value", "Description", "Package", 
   "Manufacturer", "Manufacturer PN", "Datasheet", "Source", "Link", "Part #", "Notes"];
